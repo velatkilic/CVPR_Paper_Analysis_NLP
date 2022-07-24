@@ -1,6 +1,9 @@
 # any data
 *.csv
 *.json
+*.pickle
+distilbert-base-uncased-finetuned-cvpr/
+distilbert-sentiment/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

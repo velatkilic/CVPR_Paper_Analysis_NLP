@@ -1,10 +1,120 @@
-from nbformat import read
+import pickle
+from matplotlib.pyplot import axis
 import pandas as pd
+import numpy as np
 
-cvpr_data = pd.read_csv("data\cvpr_web.csv")
+def get_topic_names(n=3):
+    topic_names = []
+    for topic_idx, topic in enumerate(nmf.components_):
+        top_features_ind = topic.argsort()[: -n - 1 : -1]
+        top_features = [tfidf_feature_names[i] for i in top_features_ind]
+        topic_names.append(top_features)
+    return topic_names
 
-def predict(papers):
-    papers = papers.split(";")
-    papers = [p.strip() for p in papers]
+def find_closest_match(topic_embed, n=5):
+    # find the closest match
+    dist = (topic_vector - topic_embed)**2
+    dist = dist.mean(axis=1)
+    print(dist.shape)
+
+    # find the best match
+    inds = dist.argsort()[0:n]
+    print(inds.shape)
+
+    return df.iloc[inds, :]
+
+
+def get_relevant_papers(input_text, n=5):
+
+    # tfidf vectorizer
+    input_tfidf = tfidf_vectorizer.transform([input_text])
+
+    # get topic embedding
+    topic_embed = nmf.transform(input_tfidf)
     
-    return "loyloy"
+    # closest match
+    out = find_closest_match(topic_embed, n)
+
+    return out #out["title"].to_json()
+
+def get_top_by_count(n=5):
+    global top_topic_inds
+    topic_names = get_topic_names(n=5)
+    out = []
+    for i in range(n):
+        ind = top_topic_inds[i]
+        out.append(topic_names[ind])
+    return out
+
+def get_top_by_citation(n=5):
+    global top_topic_citation_inds
+    topic_names = get_topic_names(n=5)
+    out = []
+    for i in range(n):
+        ind = top_topic_citation_inds[i]
+        out.append(topic_names[ind])
+    return out
+
+def get_top_rising(n=5):
+    global top_rising_inds
+    topic_names = get_topic_names(n=5)
+    out = []
+    for i in range(n):
+        ind = top_rising_inds[i]
+        out.append(topic_names[ind])
+    return out
+
+# https://discuss.streamlit.io/t/display-urls-in-dataframe-column-as-a-clickable-hyperlink/743/8
+def make_clickable(url, text):
+    url = "https://openaccess.thecvf.com/" + url
+    return f'<a target="_blank" href="{url}">{text}</a>'
+
+def init_model():
+    
+    global nmf, tfidf_vectorizer, df, tfidf_feature_names, topic_vector
+
+    with open("model\\nmf.pickle", "rb") as f:
+        nmf = pickle.load(f)
+    
+    with open("model\\tfidf_vectorizer.pickle", "rb") as f:
+        tfidf_vectorizer = pickle.load(f)
+    
+    with open("model\\topic_vector.pickle", "rb") as f:
+        topic_vector = pickle.load(f)
+    
+    df = pd.read_csv("model\\cvpr_data.csv")
+
+    tfidf_feature_names = tfidf_vectorizer.get_feature_names_out()
+
+    df["topic_class"] = topic_vector.argmax(axis=1)
+
+    global topic_stats
+    topic_stats = []
+    years = df["year"].unique()
+    for year in years:
+        topic_stats.append(df[df["year"] == year].groupby("topic_class")["citation_count"].describe())
+
+    n_components = nmf.get_params()["n_components"]
+    global counts
+    counts = np.zeros((n_components, len(years)))
+    for i in range(len(years)):
+        inds = topic_stats[i].index.values
+        counts[inds,i] = topic_stats[i]["count"].to_numpy()
+    
+
+    paper_count = counts.sum(axis=1)
+    global top_topic_inds
+    top_topic_inds = paper_count.argsort()[::-1]
+
+    global top_rising_inds
+    top_rising_inds = counts[:,-1].argsort()[::-1]
+
+    global citation_counts
+    citation_counts = np.zeros((n_components, len(years)))
+    for i in range(len(years)):
+        inds = topic_stats[i].index.values
+        citation_counts[inds,i] = topic_stats[i]["count"].to_numpy() * topic_stats[i]["mean"].to_numpy()
+    
+    paper_citation_count = citation_counts.sum(axis=1)
+    global top_topic_citation_inds
+    top_topic_citation_inds = paper_citation_count.argsort()[::-1]
