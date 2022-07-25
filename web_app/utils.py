@@ -2,6 +2,7 @@ import pickle
 from matplotlib.pyplot import axis
 import pandas as pd
 import numpy as np
+from textfill import TextFill
 
 def get_topic_names(n=3):
     topic_names = []
@@ -28,6 +29,10 @@ def get_relevant_papers(input_text, n=5):
 
     # tfidf vectorizer
     input_tfidf = tfidf_vectorizer.transform([input_text])
+
+    # check at least one word is in the vocab
+    if input_tfidf.count_nonzero() == 0:
+        return None
 
     # get topic embedding
     topic_embed = nmf.transform(input_tfidf)
@@ -69,20 +74,23 @@ def make_clickable(url, text):
     url = "https://openaccess.thecvf.com/" + url
     return f'<a target="_blank" href="{url}">{text}</a>'
 
-def init_model():
+
+def get_word_suggestions(abs_input, top_k):
+    return tf.fill_mask(abs_input, top_k=top_k)
+
+def init_model(model_dir = "..\\model", lm_dir="distilbert-base-uncased-finetuned-cvpr"):
     
     global nmf, tfidf_vectorizer, df, tfidf_feature_names, topic_vector
-
-    with open("model\\nmf.pickle", "rb") as f:
+    with open(model_dir + "\\nmf.pickle", "rb") as f:
         nmf = pickle.load(f)
     
-    with open("model\\tfidf_vectorizer.pickle", "rb") as f:
+    with open(model_dir + "\\tfidf_vectorizer.pickle", "rb") as f:
         tfidf_vectorizer = pickle.load(f)
     
-    with open("model\\topic_vector.pickle", "rb") as f:
+    with open(model_dir + "\\topic_vector.pickle", "rb") as f:
         topic_vector = pickle.load(f)
     
-    df = pd.read_csv("model\\cvpr_data.csv")
+    df = pd.read_csv(model_dir + "\\cvpr_data_with_topics.csv")
 
     tfidf_feature_names = tfidf_vectorizer.get_feature_names_out()
 
@@ -118,3 +126,6 @@ def init_model():
     paper_citation_count = citation_counts.sum(axis=1)
     global top_topic_citation_inds
     top_topic_citation_inds = paper_citation_count.argsort()[::-1]
+
+    global tf
+    tf = TextFill(model_checkpoint=lm_dir)
