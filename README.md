@@ -2,8 +2,8 @@
 
 - [x] Data collection
 - [x] Data cleaning
-- [ ] Topic analysis
-- [ ] Citation analysis
-- [ ] Language modelling
-- [ ] Flask server
-- [ ] Model deployment
+- [x] Topic analysis
+- [x] Citation analysis
+- [x] Language modelling
+- [x] Flask server
+- [x] Model deployment
