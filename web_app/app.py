@@ -27,10 +27,12 @@ with st.expander(label="Data Sources"):
     st.image(img, caption="Data Sources")
 
 # show topics
-with st.expander(label="Topic Modelling"):
+with st.expander(label="Topic Modeling"):
     img = plt.imread("title_topics.png")
-    st.image(img, caption="Topic Modelling with Titles")
+    st.image(img, caption="Topic Modeling with Titles")
 
+st.header("Search using Topic Embedding")
+st.subheader("Title Topics")
 with st.form(key="topic-search"):
     c1, c2= st.columns(2)
     with c1:
@@ -68,6 +70,7 @@ with st.form(key="topic-search"):
         else:
             st.write("Text not in the vocabulary")
 
+st.subheader("Abstract Topics")
 with st.form(key="topic-search-abstract"):
     c1, c2= st.columns(2)
     with c1:
@@ -105,6 +108,7 @@ with st.form(key="topic-search-abstract"):
         else:
             st.write("Text not in the vocabulary")
 
+st.subheader("Identifying Good Topics and Methods")
 with st.form(key="topics"):
     c1, c2 = st.columns(2)
     with c1:
@@ -126,6 +130,7 @@ with st.form(key="topics"):
         elif option == "rising":
             st.json(str(top_rising))
 
+st.header("Distilbert Language Model")
 with st.form(key="language-model"):
     c1_lm, c2_lm = st.columns((5,1))
     with c1_lm:
@@ -138,3 +143,8 @@ with st.form(key="language-model"):
     if rec_word:
         rec = utils.get_word_suggestions(abs_input, top_k=n_words)
         st.write(rec)
+
+# future work
+with st.expander(label="Future Work"):
+    img = plt.imread("future_work.png")
+    st.image(img, "Future Work")
